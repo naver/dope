@@ -2,7 +2,7 @@
 
 This repository contains the code for running our DOPE model.
 We only provide code for testing, not for training.
-If you use our code, please cite our ECCV'20 paper:
+If you use our code, please cite our [ECCV'20 paper](https://www.ecva.net/papers/eccv_2020/papers_ECCV/papers/123710375.pdf):
 
 ```bibtex
 @inproceedings{dope,
@@ -64,7 +64,12 @@ python dope.py  --model DOPErealtime_v1_0_0 --image 015994080.jpg
 ```
 
 The command will create an image `<imagename>_<modelname>.jpg` that shows the 2D poses output by our DOPE model.
-3D poses are also available but are not displayed.
+
+We also provide code to visualize the results but in 2D and in 3D, just add the argument `--visu3d` to the previous commandline.
+The 3D visualization uses OpenGL and the visvis python package, we do not provide support for installation and OpenGL issues.
+Running the command with the `--visu3d` option should create another file with the 3D visualization named `<imagename>_<modelname>_visu3d.jpg`.
+Note that DOPE predicts 3D poses for each body part in their relative coordinate systems, eg, centered on body center for bodies.
+For better visualization, we approximate 3D scene coordinates by finding the offsets that minimize the reprojection error based on a scaled orthographic projection model.
 
 Here is one example resulting image:
 ![example result](example_result.jpg)

@@ -35,7 +35,7 @@ def dope(imagename, modelname, postprocessing='ppi'):
     if not os.path.isfile(ckpt_fname):
         raise Exception('{:s} does not exist, please download the model first and place it in the models/ folder'.format(ckpt_fname))
     print('Loading model', modelname)
-    ckpt = torch.load(ckpt_fname)
+    ckpt = torch.load(ckpt_fname, map_location=device)
     #ckpt['half'] = False # uncomment this line in case your device cannot handle half computation
     ckpt['dope_kwargs']['rpn_post_nms_top_n_test'] = 1000
     model = dope_resnet50(**ckpt['dope_kwargs'])
@@ -74,11 +74,12 @@ def dope(imagename, modelname, postprocessing='ppi'):
             if part=='hand':
                 for i in range(len(detections[part])): 
                     detections[part][i]['hand_isright'] = bestcls<ckpt['hand_ppi_kwargs']['K']
+    
     # assignment of hands and head to body
-    detections = postprocess.assign_hands_and_head_to_body(detections)
+    detections, body_with_wrists, body_with_head = postprocess.assign_hands_and_head_to_body(detections)
     
     # display results
-    print('Displaying')
+    print('Displaying results')
     det_poses2d = {part: np.stack([d['pose2d'] for d in part_detections], axis=0) if len(part_detections)>0 else np.empty( (0,num_joints[part],2), dtype=np.float32) for part, part_detections in detections.items()}
     scores = {part: [d['score'] for d in part_detections] for part,part_detections in detections.items()}
     imout = visu.visualize_bodyhandface2d(np.asarray(image)[:,:,::-1],
@@ -87,8 +88,23 @@ def dope(imagename, modelname, postprocessing='ppi'):
                                          )
     outfile = imagename+'_{:s}.jpg'.format(modelname)
     cv2.imwrite(outfile, imout)
-    print(outfile)
+    print('\t', outfile)
     
+    # display results in 3D
+    if args.do_visu3d:
+        print('Displaying results in 3D')
+        import visu3d
+        viewer3d = visu3d.Viewer3d()
+        img3d, img2d = viewer3d.plot3d(image, 
+           bodies={'pose3d': np.stack([d['pose3d'] for d in detections['body']]), 'pose2d' : np.stack([d['pose2d'] for d in detections['body']])},
+           hands={'pose3d': np.stack([d['pose3d'] for d in detections['hand']]), 'pose2d' : np.stack([d['pose2d'] for d in detections['hand']])},
+           faces={'pose3d': np.stack([d['pose3d'] for d in detections['face']]), 'pose2d' : np.stack([d['pose2d'] for d in detections['face']])},
+           body_with_wrists=body_with_wrists,
+           body_with_head=body_with_head,
+           interactive=False)
+        outfile3d = imagename+'_{:s}_visu3d.jpg'.format(modelname)
+        cv2.imwrite(outfile3d, img3d[:,:,::-1])
+        print('\t', outfile3d)
     
     
     
@@ -101,5 +117,6 @@ if __name__=="__main__":
     parser.add_argument('--model', required=True, type=str, help='name of the model to use (eg DOPE_v1_0_0)')
     parser.add_argument('--image', required=True, type=str , help='path to the image')
     parser.add_argument('--postprocess', default='ppi', choices=['ppi','nms'], help='postprocessing method')
+    parser.add_argument('--visu3d', dest='do_visu3d', default=False, action='store_true')
     args = parser.parse_args()
     dope(args.image, args.model, postprocessing=args.postprocess)

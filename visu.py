@@ -5,13 +5,17 @@
 import numpy as np
 import cv2
 
-def _get_bones_and_colors(J): # colors in BGR
+def _get_bones_and_colors(J, ignore_neck=False): # colors in BGR
     """
-    param J: number of joints -- used to deduce the body part considered. 
+    param J: number of joints -- used to deduce the body part considered.
+    param ignore_neck: if True, the neck bone of won't be returned in case of a body (J==13)
     """
     if J==13: # full body (similar to LCR-Net)
         lbones = [(9,11),(7,9),(1,3),(3,5)]
-        rbones = [(0,2),(2,4),(8,10),(6,8)] + [(4,5),(10,11)] + [([4,5],[10,11]),(12,[10,11])]        
+        if ignore_neck:
+            rbones = [(0,2),(2,4),(8,10),(6,8)] + [(4,5),(10,11)] + [([4,5],[10,11])]
+        else:
+            rbones = [(0,2),(2,4),(8,10),(6,8)] + [(4,5),(10,11)] + [([4,5],[10,11]),(12,[10,11])]
         bonecolors = [ [0,255,0] ] * len(lbones) + [ [255,0,0] ] * len(rbones)  
         pltcolors = [ 'g-' ] * len(lbones) + [ 'b-' ] * len(rbones)  
         bones = lbones + rbones

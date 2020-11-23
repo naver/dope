@@ -109,6 +109,6 @@ def assign_hands_and_head_to_body(detections):
   for i,(lwrist,rwrist) in enumerate(body_with_wrists):
       if lwrist != -1: detections['body'][i]['pose2d'][BODY_LEFT_WRIST_KPT_ID,:] = detections['hand'][lwrist]['pose2d'][0,:]
       if rwrist != -1: detections['body'][i]['pose2d'][BODY_RIGHT_WRIST_KPT_ID,:] = detections['hand'][rwrist]['pose2d'][0,:]
-  #body_with_head = assign_head_to_body(out['body_pose2d'], out['head_pose2d'])
-  return detections
+  body_with_head = assign_head_to_body(det_poses2d['body'], det_poses2d['face'])
+  return detections, body_with_wrists, body_with_head
   
